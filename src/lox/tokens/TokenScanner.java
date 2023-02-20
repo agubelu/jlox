@@ -1,6 +1,6 @@
-package tokens;
+package lox.tokens;
 
-import static tokens.TokenType.*;
+import static lox.tokens.TokenType.*;
 import lox.Lox;
 import java.util.ArrayList;
 import java.util.HashMap;

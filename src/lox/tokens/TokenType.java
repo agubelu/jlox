@@ -1,4 +1,4 @@
-package tokens;
+package lox.tokens;
 
 public enum TokenType {
     // Block delimiters
@@ -7,7 +7,7 @@ public enum TokenType {
     // General 1-character syntax elements
     COMMA, DOT, SEMICOLON,
 
-    // Math operation tokens
+    // Math operation lox.tokens
     PLUS, PLUS_EQUAL, MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH, SLASH_EQUAL,
 
     // Comparators
