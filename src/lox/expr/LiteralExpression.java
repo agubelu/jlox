@@ -4,9 +4,9 @@ import lox.tokens.Token;
 import lox.visitor.Visitor;
 
 public class LiteralExpression extends Expression {
-    final Token literal;
+    public final Object literal;
 
-    public LiteralExpression(Token literal) {
+    public LiteralExpression(Object literal) {
         this.literal = literal;
     }
 

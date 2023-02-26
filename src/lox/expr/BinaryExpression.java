@@ -5,9 +5,9 @@ import lox.visitor.Visitor;
 
 public class BinaryExpression extends Expression {
 
-    final Expression leftSide;
-    final Token operator;
-    final Expression rightSide;
+    public final Expression leftSide;
+    public final Token operator;
+    public final Expression rightSide;
 
     public BinaryExpression(Expression leftSide, Token operator, Expression rightSide) {
         this.leftSide = leftSide;

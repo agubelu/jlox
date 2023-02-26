@@ -1,6 +1,9 @@
 package lox;
 
+import lox.tokens.Token;
 import lox.tokens.TokenScanner;
+import lox.tokens.TokenType;
+import lox.visitor.ASTPrinter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,13 +56,23 @@ public class Lox {
     private static void runInterpreter(String input) {
         var scanner = new TokenScanner(input);
         var tokens = scanner.scanTokens();
+        var parser = new ASTParser(tokens);
+        var ast = parser.parseTokens();
 
-        for(var token : tokens) {
-            System.out.println(token);
-        }
+        if(hadError) return;
+
+        var printer = new ASTPrinter();
+        System.out.println(printer.printExpression(ast));
     }
 
     ///////////////////////// Error handling /////////////////////////
+    public static void error(Token token, String errorMessage) {
+        var where = token.getType() == TokenType.EOF ?
+                        " at end" :
+                        " at \"" + token.getLexeme() + "\"";
+        reportError(token.getLine(), where, errorMessage);
+    }
+
     public static void error(int line, String errorMessage) {
         reportError(line, "", errorMessage);
     }

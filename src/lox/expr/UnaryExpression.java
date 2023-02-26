@@ -5,8 +5,8 @@ import lox.visitor.Visitor;
 
 public class UnaryExpression extends Expression {
 
-    final Token operator;
-    final Expression rightSide;
+    public final Token operator;
+    public final Expression rightSide;
 
     public UnaryExpression(Token operator, Expression rightSide) {
         this.operator = operator;

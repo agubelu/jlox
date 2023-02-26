@@ -4,7 +4,7 @@ import lox.visitor.Visitor;
 
 public class Grouping extends Expression {
 
-    final Expression expr;
+    public final Expression expr;
 
     public Grouping(Expression expr) {
         this.expr = expr;
