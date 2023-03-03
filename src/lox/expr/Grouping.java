@@ -1,6 +1,6 @@
 package lox.expr;
 
-import lox.visitor.Visitor;
+import lox.visitors.Visitor;
 
 public class Grouping extends Expression {
 

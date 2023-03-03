@@ -1,7 +1,7 @@
 package lox.expr;
 
 import lox.tokens.Token;
-import lox.visitor.Visitor;
+import lox.visitors.Visitor;
 
 public class BinaryExpression extends Expression {
 

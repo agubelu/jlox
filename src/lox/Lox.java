@@ -3,7 +3,8 @@ package lox;
 import lox.tokens.Token;
 import lox.tokens.TokenScanner;
 import lox.tokens.TokenType;
-import lox.visitor.ASTPrinter;
+import lox.visitors.ASTPrinter;
+import lox.visitors.Interpreter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.nio.file.Paths;
 
 public class Lox {
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -31,7 +33,7 @@ public class Lox {
         var fileContent = new String(fileBytes, Charset.defaultCharset());
         runInterpreter(fileContent);
 
-        if(hadError) {
+        if(hadError || hadRuntimeError) {
             System.exit(1);
         }
     }
@@ -53,24 +55,32 @@ public class Lox {
         }
     }
 
+    /**
+     * Interprets a piece of Lox code, either from the REPL or from a file
+     */
     private static void runInterpreter(String input) {
         var scanner = new TokenScanner(input);
         var tokens = scanner.scanTokens();
         var parser = new ASTParser(tokens);
-        var ast = parser.parseTokens();
+        var expr = parser.parseTokens();
 
         if(hadError) return;
 
-        var printer = new ASTPrinter();
-        System.out.println(printer.printExpression(ast));
+        var interpreter = new Interpreter();
+        System.out.println(interpreter.interpret(expr));
     }
 
     ///////////////////////// Error handling /////////////////////////
     public static void error(Token token, String errorMessage) {
         var where = token.getType() == TokenType.EOF ?
-                        " at end" :
+                        " at the end of file" :
                         " at \"" + token.getLexeme() + "\"";
         reportError(token.getLine(), where, errorMessage);
+    }
+
+    public static void runtimeError(RuntimeError error) {
+        System.err.println("[Line " + error.token.getLine() + "] Runtime error: " + error.getMessage());
+        hadRuntimeError = true;
     }
 
     public static void error(int line, String errorMessage) {

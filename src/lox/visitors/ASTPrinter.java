@@ -1,4 +1,4 @@
-package lox.visitor;
+package lox.visitors;
 
 import lox.expr.*;
 
