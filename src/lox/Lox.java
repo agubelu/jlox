@@ -60,12 +60,15 @@ public class Lox {
      */
     private static void runInterpreter(String input) {
         hadSyntaxError = false;
+
         var scanner = new TokenScanner(input);
         var tokens = scanner.scanTokens();
+        if(hadSyntaxError) return;
+
         var parser = new ASTParser(tokens);
         var statements = parser.parseTokens();
-
         if(hadSyntaxError) return;
+
         interpreter.interpret(statements);
     }
 

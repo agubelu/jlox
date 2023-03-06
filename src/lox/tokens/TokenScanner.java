@@ -124,12 +124,28 @@ public class TokenScanner {
         addToken(NUMBER, number);
     }
 
-    // Parses a string by skipping forward until we find the closing double quotes
+    // Parses a string by skipping forward until we find the closing character
     private void parseString(char delimiter) {
+        var builder = new StringBuilder();
         while(!isAtEnd() && peekNextChar() != delimiter) {
-            if(peekNextChar() == '\n') {
+            var currentChar = peekNextChar();
+            if(currentChar == '\n') {
                 line += 1;
             }
+
+            // If the current character is the escape bar \, determine the character to escape to
+            // and consume an extra character to skip forward to the end of the escape sequence
+            if(currentChar == '\\') {
+                var unescaped = unescapeChar(peekTwoForward());
+                if(unescaped == null) {
+                    Lox.error(line, "Unknown escape character: \\" + peekTwoForward());
+                } else {
+                    currentChar = unescaped;
+                    consumeNextChar();
+                }
+            }
+
+            builder.append(currentChar);
             consumeNextChar();
         }
 
@@ -141,7 +157,7 @@ public class TokenScanner {
 
         // The string is OK, consume the closing quotes and trim both quotes away
         consumeNextChar();
-        var string = source.substring(start + 1, current - 1);
+        var string = builder.toString();
         addToken(STRING, string);
     }
 
@@ -186,6 +202,17 @@ public class TokenScanner {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    private static Character unescapeChar(char escaped) {
+        return switch(escaped) {
+            case 't' -> '\t';
+            case 'n' -> '\n';
+            case 'r' -> '\r';
+            case '\'' -> '\'';
+            case '"' -> '"';
+            case '\\' -> '\\';
+            default -> null;
+        };
+    }
     private static boolean isDigit(char ch) {
         return ch >= '0' && ch <= '9';
     }
