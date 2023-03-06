@@ -1,37 +1,88 @@
-package lox.visitors;
+package lox;
 
-import lox.Lox;
-import lox.RuntimeError;
 import lox.expr.*;
+import lox.stmt.ExpressionStmt;
+import lox.stmt.PrintStmt;
+import lox.stmt.Statement;
+import lox.stmt.VariableDeclarationStmt;
 import lox.tokens.Token;
+import lox.visitors.ExpressionVisitor;
+import lox.visitors.StatementVisitor;
+
+import java.util.List;
 
 /**
  * The Interpreter class is used to visit an Expression and compute its resulting
  * value, recursively interpreting any subexpressions and combining them
  * according to the operator in the parent expression.
  */
-public class Interpreter implements Visitor<Object> {
+public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
 
+    private Environment environment;
 
-    public String interpret(Expression expr) {
+    public Interpreter() {
+        environment = new Environment();
+    }
+
+    public void interpret(List<Statement> statements) {
         try {
-            var res = evaluate(expr);
-            return res.toString();
+            for(Statement stmt : statements) {
+                execute(stmt);
+            }
         } catch(RuntimeError error) {
             Lox.runtimeError(error);
-            return "";
         }
     }
 
+    private void execute(Statement stmt) {
+        stmt.accept(this);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Statement visitors
+
+    @Override
+    public Void visitVariableDeclarationStmt(VariableDeclarationStmt stmt) {
+        Object value = null;
+        if(stmt.value != null) {
+            value = evaluate(stmt.value);
+        }
+
+        environment.declare(stmt.identifier.getLexeme(), value);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(PrintStmt stmt) {
+        var value = evaluate(stmt.expr);
+        System.out.println(value);
+        return null;
+    }
+
+    @Override
+    public Void visitExpressionStmt(ExpressionStmt stmt) {
+        evaluate(stmt.expr);
+        return null;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Expression visitors
+
     /**
      * Evaluates an expression and returns its result.
-     * Contrary to interpret(), evaluate() does not catch RuntimeErrors and thus
-     * propagates them upwards. This is the method that should be used internally
-     * when evaluating subexpressions, since the whole expression must be discarded
-     * if a RuntimeError occurs anywhere inside it.
+     * This method does not catch RuntimeErrors and thus propagates them upwards.
+     * This is the method that should be used internally when evaluating subexpressions,
+     * since the whole expression must be discarded if a RuntimeError occurs anywhere inside it.
      */
     private Object evaluate(Expression expr) {
         return expr.accept(this);
+    }
+
+    @Override
+    public Object visitAssignmentExpr(AssignmentExpression assignExpr) {
+        var value = evaluate(assignExpr.value);
+        environment.assign(assignExpr.target, value);
+        return value;
     }
 
     @Override
@@ -42,6 +93,11 @@ public class Interpreter implements Visitor<Object> {
     @Override
     public Object visitGrouping(Grouping grouping) {
         return evaluate(grouping.expr);
+    }
+
+    @Override
+    public Object visitVariableExpr(VariableExpression varExpr) {
+        return environment.get(varExpr.identifier);
     }
 
     @Override
@@ -101,6 +157,7 @@ public class Interpreter implements Visitor<Object> {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Auxiliary private methods
 
     /**
      * Determines the truthiness of a value when implicitly converted to a boolean

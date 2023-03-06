@@ -3,8 +3,6 @@ package lox;
 import lox.tokens.Token;
 import lox.tokens.TokenScanner;
 import lox.tokens.TokenType;
-import lox.visitors.ASTPrinter;
-import lox.visitors.Interpreter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,8 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class Lox {
-    static boolean hadError = false;
+    static boolean hadSyntaxError = false;
     static boolean hadRuntimeError = false;
+
+    static Interpreter interpreter = new Interpreter();
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -33,7 +33,7 @@ public class Lox {
         var fileContent = new String(fileBytes, Charset.defaultCharset());
         runInterpreter(fileContent);
 
-        if(hadError || hadRuntimeError) {
+        if(hadSyntaxError || hadRuntimeError) {
             System.exit(1);
         }
     }
@@ -59,15 +59,14 @@ public class Lox {
      * Interprets a piece of Lox code, either from the REPL or from a file
      */
     private static void runInterpreter(String input) {
+        hadSyntaxError = false;
         var scanner = new TokenScanner(input);
         var tokens = scanner.scanTokens();
         var parser = new ASTParser(tokens);
-        var expr = parser.parseTokens();
+        var statements = parser.parseTokens();
 
-        if(hadError) return;
-
-        var interpreter = new Interpreter();
-        System.out.println(interpreter.interpret(expr));
+        if(hadSyntaxError) return;
+        interpreter.interpret(statements);
     }
 
     ///////////////////////// Error handling /////////////////////////
@@ -89,6 +88,6 @@ public class Lox {
 
     private static void reportError(int line, String where, String errorMessage) {
         System.err.println("[Line " + line + "] Error" + where + ": " + errorMessage);
-        hadError = true;
+        hadSyntaxError = true;
     }
 }

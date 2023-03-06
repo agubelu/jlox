@@ -64,7 +64,8 @@ public class TokenScanner {
 
                 break;
 
-            case '"': parseString(); break;
+            case '"': parseString('"'); break;
+            case '\'': parseString('\''); break;
 
             // Ignore whitespaces
             case ' ':
@@ -124,8 +125,8 @@ public class TokenScanner {
     }
 
     // Parses a string by skipping forward until we find the closing double quotes
-    private void parseString() {
-        while(!isAtEnd() && peekNextChar() != '"') {
+    private void parseString(char delimiter) {
+        while(!isAtEnd() && peekNextChar() != delimiter) {
             if(peekNextChar() == '\n') {
                 line += 1;
             }

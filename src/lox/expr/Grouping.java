@@ -1,6 +1,6 @@
 package lox.expr;
 
-import lox.visitors.Visitor;
+import lox.visitors.ExpressionVisitor;
 
 public class Grouping extends Expression {
 
@@ -11,7 +11,7 @@ public class Grouping extends Expression {
     }
 
     @Override
-    public<R> R accept(Visitor<R> visitor) {
+    public<R> R accept(ExpressionVisitor<R> visitor) {
         return visitor.visitGrouping(this);
     }
 }

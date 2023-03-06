@@ -1,7 +1,7 @@
 package lox.expr;
 
-import lox.visitors.Visitor;
+import lox.visitors.ExpressionVisitor;
 
 public abstract class Expression {
-    public abstract<R> R accept(Visitor<R> visitor);
+    public abstract<R> R accept(ExpressionVisitor<R> visitor);
 }

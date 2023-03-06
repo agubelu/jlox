@@ -1,6 +1,6 @@
 package lox.expr;
 
-import lox.visitors.Visitor;
+import lox.visitors.ExpressionVisitor;
 
 public class LiteralExpression extends Expression {
     public final Object literal;
@@ -10,7 +10,7 @@ public class LiteralExpression extends Expression {
     }
 
     @Override
-    public<R> R accept(Visitor<R> visitor) {
+    public<R> R accept(ExpressionVisitor<R> visitor) {
         return visitor.visitLiteralExpr(this);
     }
 }

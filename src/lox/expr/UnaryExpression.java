@@ -1,7 +1,7 @@
 package lox.expr;
 
 import lox.tokens.Token;
-import lox.visitors.Visitor;
+import lox.visitors.ExpressionVisitor;
 
 public class UnaryExpression extends Expression {
 
@@ -14,7 +14,7 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public<R> R accept(Visitor<R> visitor) {
+    public<R> R accept(ExpressionVisitor<R> visitor) {
         return visitor.visitUnaryExpr(this);
     }
 }

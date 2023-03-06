@@ -1,7 +1,7 @@
 package lox.expr;
 
 import lox.tokens.Token;
-import lox.visitors.Visitor;
+import lox.visitors.ExpressionVisitor;
 
 public class BinaryExpression extends Expression {
 
@@ -16,7 +16,7 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public<R> R accept(Visitor<R> visitor) {
+    public<R> R accept(ExpressionVisitor<R> visitor) {
         return visitor.visitBinaryExpr(this);
     }
 }
