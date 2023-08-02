@@ -1,10 +1,7 @@
 package lox;
 
 import lox.expr.*;
-import lox.stmt.ExpressionStmt;
-import lox.stmt.PrintStmt;
-import lox.stmt.Statement;
-import lox.stmt.VariableDeclarationStmt;
+import lox.stmt.*;
 import lox.tokens.Token;
 import lox.tokens.TokenType;
 
@@ -66,6 +63,8 @@ public class ASTParser {
     private Statement parseStatement() {
         if(match(PRINT)) {
             return parsePrintStatement();
+        } else if(match(LEFT_BRACE)) {
+            return new Block(parseBlock());
         } else {
             return parseExpressionStatement();
         }
@@ -81,6 +80,17 @@ public class ASTParser {
         var expr = parseExpression();
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after expression");
         return new ExpressionStmt(expr);
+    }
+
+    private ArrayList<Statement> parseBlock() {
+        var stmts = new ArrayList<Statement>();
+
+        while(peekNextToken().getType() != RIGHT_BRACE && !isAtEnd()) {
+            stmts.add(parseDeclaration());
+        }
+
+        consumeExpectedOrError(RIGHT_BRACE, "Expected '}' after block");
+        return stmts;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

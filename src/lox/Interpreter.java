@@ -1,10 +1,7 @@
 package lox;
 
 import lox.expr.*;
-import lox.stmt.ExpressionStmt;
-import lox.stmt.PrintStmt;
-import lox.stmt.Statement;
-import lox.stmt.VariableDeclarationStmt;
+import lox.stmt.*;
 import lox.tokens.Token;
 import lox.visitors.ExpressionVisitor;
 import lox.visitors.StatementVisitor;
@@ -40,6 +37,12 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Statement visitors
+
+    @Override
+    public Void visitBlock(Block block) {
+        runBlock(block);
+        return null;
+    }
 
     @Override
     public Void visitVariableDeclarationStmt(VariableDeclarationStmt stmt) {
@@ -158,6 +161,23 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Auxiliary private methods
+
+    /**
+     * Runs a block containing statements, taking care of replacing
+     * and updating the environment as needed
+     */
+    private void runBlock(Block block) {
+        var oldEnv = this.environment;
+        this.environment = new Environment(oldEnv);
+
+        try {
+            for(Statement stmt : block.stmts) {
+                execute(stmt);
+            }
+        } finally {
+            this.environment = oldEnv;
+        }
+    }
 
     /**
      * Determines the truthiness of a value when implicitly converted to a boolean
