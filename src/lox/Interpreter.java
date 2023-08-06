@@ -8,6 +8,9 @@ import lox.visitors.StatementVisitor;
 
 import java.util.List;
 
+import static lox.tokens.TokenType.AND;
+import static lox.tokens.TokenType.OR;
+
 /**
  * The Interpreter class is used to visit an Expression and compute its resulting
  * value, recursively interpreting any subexpressions and combining them
@@ -41,6 +44,18 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     @Override
     public Void visitBlock(Block block) {
         runBlock(block);
+        return null;
+    }
+
+    @Override
+    public Void visitIfStmt(IfStmt ifStmt) {
+        var condition = evaluate(ifStmt.condition);
+        if(isTruthy(condition)) {
+            execute(ifStmt.trueBranch);
+        } else if(ifStmt.falseBranch != null) {
+            execute(ifStmt.falseBranch);
+        }
+
         return null;
     }
 
@@ -157,6 +172,23 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
                 // Unreachable, all possible unary operators should have been covered
                 throw new IllegalStateException("Unsupported binary operator: " + binaryExpr.operator);
         };
+    }
+
+    public Object visitLogicalExpr(LogicalExpression logicalExpr) {
+        var leftResult = evaluate(logicalExpr.leftSide);
+        var leftIsTruthy = isTruthy(leftResult);
+        var opType = logicalExpr.operator.getType();
+
+        // Short-circuit if left is true and it's an OR, or if it's false and it's an AND
+        if((leftIsTruthy && opType == OR) || (!leftIsTruthy && opType == AND)) {
+            return leftResult;
+        }
+
+        // In all other cases, the result is the truthiness of the right-hand operand
+        // NOTE: this is only the case if we have only AND and OR operations. If more
+        // logical operations are included, returning the right operand at this point
+        // may not be the correct output.
+        return evaluate(logicalExpr.rightSide);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

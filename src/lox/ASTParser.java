@@ -65,6 +65,8 @@ public class ASTParser {
             return parsePrintStatement();
         } else if(match(LEFT_BRACE)) {
             return new Block(parseBlock());
+        } else if(match(IF)) {
+            return parseIfStatement();
         } else {
             return parseExpressionStatement();
         }
@@ -74,6 +76,21 @@ public class ASTParser {
         var expr = parseExpression();
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after expression to print");
         return new PrintStmt(expr);
+    }
+
+    private Statement parseIfStatement() {
+        consumeExpectedOrError(LEFT_PAREN, "Expected '(' after if");
+        var condition = parseExpression();
+        consumeExpectedOrError(RIGHT_PAREN, "Expected ')' after if condition");
+        var trueBranch = parseStatement();
+
+        // If there is an else branch, consume and store it
+        Statement falseBranch = null;
+        if(match(ELSE)) {
+            falseBranch = parseStatement();
+        }
+
+        return new IfStmt(condition, trueBranch, falseBranch);
     }
 
     private Statement parseExpressionStatement() {
@@ -101,7 +118,7 @@ public class ASTParser {
     }
 
     private Expression parseAssignment() {
-        var leftSide = parseEquality();
+        var leftSide = parseOr();
 
         if(match(EQUAL)) {
             // We can only generate an Assignment expression if whatever is on the
@@ -118,6 +135,30 @@ public class ASTParser {
         }
 
         return leftSide;
+    }
+
+    private Expression parseOr() {
+        var expr = parseAnd();
+
+        while(match(OR)) {
+            var operator = previousToken();
+            var rightSide = parseAnd();
+            expr = new LogicalExpression(expr, operator, rightSide);
+        }
+
+        return expr;
+    }
+
+    private Expression parseAnd() {
+        var expr = parseEquality();
+
+        while(match(AND)) {
+            var operator = previousToken();
+            var rightSide = parseEquality();
+            expr = new LogicalExpression(expr, operator, rightSide);
+        }
+
+        return expr;
     }
 
     private Expression parseEquality() {
