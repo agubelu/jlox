@@ -78,6 +78,8 @@ public class ASTParser {
             return parseIfStatement();
         } else if(match(WHILE)) {
             return parseWhileStatement();
+        } else if(match(FOR)) {
+            return parseForStatement();
         } else {
             return parseExpressionStatement();
         }
@@ -110,6 +112,60 @@ public class ASTParser {
         consumeExpectedOrError(RIGHT_PAREN, "Expected ')' after while condition");
         var body = parseStatement();
         return new WhileStmt(condition, body);
+    }
+
+    /** De-sugars a for into a while statement. Returns a block which contains
+     * the initializer and the WhileStmt. The While has its body modified to a
+     * block that contains the original for body, and then the update.
+     */
+    private Statement parseForStatement() {
+        consumeExpectedOrError(LEFT_PAREN, "Expected '(' after for");
+
+        // The initializer can be an expression, a variable declaration, or empty
+        // The two first ones will consume the expected semicolon after it.
+        Declaration initializer;
+        if(match(SEMICOLON)) {
+            initializer = null;
+        } else if(match(LET)) {
+            initializer = parseVariableDecl();
+        } else {
+            initializer = new StatementDecl(parseExpressionStatement());
+        }
+
+        Expression condition = null;
+        if(!match(SEMICOLON)) { // If there is a semicolon, it's consumed
+            condition = parseExpression();
+            consumeExpectedOrError(SEMICOLON, "Expected ';' after for condition");
+        }
+
+        Expression update = null;
+        if(peekNextToken().getType() != RIGHT_PAREN) {
+            update = parseExpression();
+        }
+
+        consumeExpectedOrError(RIGHT_PAREN, "Expected ')' after for");
+
+        Statement body = parseStatement();
+
+        // De-sugar the elements into a while. First, put the update at the end of the body
+        var updateDecl = new StatementDecl(new ExpressionStmt(update));
+        var bodyDecl = new StatementDecl(body);
+        body = new Block(Arrays.asList(bodyDecl, updateDecl));
+
+        // Then, construct the while with the given condition. If there is no condition,
+        // provide "true" for an infinite loop.
+        if(condition == null) {
+            condition = new LiteralExpression(true);
+        }
+        body = new WhileStmt(condition, body);
+
+        // Finally, put the initializer in front of the while, if it exists
+        if(initializer != null) {
+            var newBody = new StatementDecl(body);
+            body = new Block(Arrays.asList(initializer, newBody));
+        }
+
+        return body;
     }
 
     private Statement parseExpressionStatement() {
