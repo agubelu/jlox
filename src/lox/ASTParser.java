@@ -67,6 +67,8 @@ public class ASTParser {
             return new Block(parseBlock());
         } else if(match(IF)) {
             return parseIfStatement();
+        } else if(match(WHILE)) {
+            return parseWhileStatement();
         } else {
             return parseExpressionStatement();
         }
@@ -91,6 +93,14 @@ public class ASTParser {
         }
 
         return new IfStmt(condition, trueBranch, falseBranch);
+    }
+
+    private Statement parseWhileStatement() {
+        consumeExpectedOrError(LEFT_PAREN, "Expected '(' after while");
+        var condition = parseExpression();
+        consumeExpectedOrError(RIGHT_PAREN, "Expected ')' after while condition");
+        var body = parseStatement();
+        return new WhileStmt(condition, body);
     }
 
     private Statement parseExpressionStatement() {

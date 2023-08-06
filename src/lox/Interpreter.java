@@ -59,6 +59,15 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
+    public Void visitWhileStmt(WhileStmt stmt) {
+        while(isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitVariableDeclarationStmt(VariableDeclarationStmt stmt) {
         Object value = null;
         if(stmt.value != null) {
