@@ -277,7 +277,7 @@ public class ASTParser {
     private Expression parseFactor() {
         var expr = parseUnary();
 
-        while(match(SLASH, ASTERISK)) {
+        while(match(SLASH, ASTERISK, PERCENT)) {
             var operator = previousToken();
             var rightSide = parseUnary();
             expr = new BinaryExpression(expr, operator, rightSide);

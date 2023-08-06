@@ -7,8 +7,8 @@ public enum TokenType {
     // General 1-character syntax elements
     COMMA, DOT, SEMICOLON,
 
-    // Math operation lox.tokens
-    PLUS, PLUS_EQUAL, MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH, SLASH_EQUAL,
+    // Math operations
+    PLUS, PLUS_EQUAL, MINUS, MINUS_EQUAL, ASTERISK, ASTERISK_EQUAL, SLASH, SLASH_EQUAL, PERCENT,
 
     // Comparators
     NOT, NOT_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,

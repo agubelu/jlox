@@ -45,6 +45,7 @@ public class TokenScanner {
             case '.': addToken(DOT); break;
             case ',': addToken(COMMA); break;
             case ';': addToken(SEMICOLON); break;
+            case '%': addToken(PERCENT); break;
             case '+': addToken(tokenIfNextEquals(PLUS, PLUS_EQUAL)); break;
             case '-': addToken(tokenIfNextEquals(MINUS, MINUS_EQUAL)); break;
             case '*': addToken(tokenIfNextEquals(ASTERISK, ASTERISK_EQUAL)); break;

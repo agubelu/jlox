@@ -203,6 +203,9 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
             case ASTERISK:
                 ensureValuesAreNumbers(leftResult, rightResult, binaryExpr.operator);
                 yield (Double) leftResult * (Double) rightResult;
+            case PERCENT:
+                ensureValuesAreNumbers(leftResult, rightResult, binaryExpr.operator);
+                yield (Double) leftResult % (Double) rightResult;
             case LESS:
                 ensureValuesAreNumbers(leftResult, rightResult, binaryExpr.operator);
                 yield (Double) leftResult < (Double) rightResult;
