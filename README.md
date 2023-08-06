@@ -7,6 +7,7 @@ My implementation has a few minor syntax changes to make myself happy:
 - `fun` -> `fn`
 - `var` -> `let`
 
-And some additions, such as:
-
-- `+=`, `-=`, `*=`, and `/=` operators 
+And some practical additions, such as:
+- `+=`, `-=`, `*=`, and `/=` for operation and assignment
+- `%` for modulo
+- `break` support in for and while loops
