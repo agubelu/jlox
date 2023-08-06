@@ -1,15 +1,16 @@
 package lox.stmt;
 
+import lox.decl.Declaration;
 import lox.visitors.StatementVisitor;
 
 import java.util.ArrayList;
 
 public class Block extends Statement {
 
-    public final ArrayList<Statement> stmts;
+    public final ArrayList<Declaration> decls;
 
-    public Block(ArrayList<Statement> stmts) {
-        this.stmts = stmts;
+    public Block(ArrayList<Declaration> decls) {
+        this.decls = decls;
     }
 
     @Override

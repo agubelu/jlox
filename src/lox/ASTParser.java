@@ -2,6 +2,7 @@ package lox;
 
 import lox.expr.*;
 import lox.stmt.*;
+import lox.decl.*;
 import lox.tokens.Token;
 import lox.tokens.TokenType;
 
@@ -21,44 +22,52 @@ public class ASTParser {
         this.current = 0;
     }
 
-    public List<Statement> parseTokens() {
-        var statements = new ArrayList<Statement>();
+    public List<Declaration> parseTokens() {
+        var declarations = new ArrayList<Declaration>();
 
         while(!isAtEnd()) {
-            var stmt = parseDeclaration();
-            statements.add(stmt);
+            var decl = parseDeclaration();
+            declarations.add(decl);
         }
 
-        return statements;
+        return declarations;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Recursive parsing methods for different levels of precedence
-    /// First, statement parsers
+    /// First, declaration parsers
 
-    private Statement parseDeclaration() {
+    private Declaration parseDeclaration() {
         try {
             if(match(LET)) {
-                return parseVariableStatement();
+                return parseVariableDecl();
             }
 
-            return parseStatement();
+            return parseStatementDecl();
         } catch(ParseError err) {
             synchronize();
             return null;
         }
     }
 
-    private Statement parseVariableStatement() {
-        // The LET token has been consumed by the call to parseDeclaration()
+    private Declaration parseVariableDecl() {
+        // The LET token has been consumed by the call to parseVariableDecl()
         var identifier = consumeExpectedOrError(IDENTIFIER, "Expected identifier after 'let'");
         Expression value = null;
         if(match(EQUAL)) {
             value = parseExpression();
         }
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after variable declaration");
-        return new VariableDeclarationStmt(identifier, value);
+        return new VariableDecl(identifier, value);
     }
+
+    private Declaration parseStatementDecl() {
+        var stmt = parseStatement();
+        return new StatementDecl(stmt);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Next, statement parsers
 
     private Statement parseStatement() {
         if(match(PRINT)) {
@@ -109,19 +118,19 @@ public class ASTParser {
         return new ExpressionStmt(expr);
     }
 
-    private ArrayList<Statement> parseBlock() {
-        var stmts = new ArrayList<Statement>();
+    private ArrayList<Declaration> parseBlock() {
+        var declarations = new ArrayList<Declaration>();
 
         while(peekNextToken().getType() != RIGHT_BRACE && !isAtEnd()) {
-            stmts.add(parseDeclaration());
+            declarations.add(parseDeclaration());
         }
 
         consumeExpectedOrError(RIGHT_BRACE, "Expected '}' after block");
-        return stmts;
+        return declarations;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Expression parsers
+    /// Finally, expression parsers
 
     private Expression parseExpression() {
         return parseAssignment();
@@ -304,8 +313,7 @@ public class ASTParser {
         if(nextToken.getType() == expected) {
             return consumeNextToken();
         } else {
-            var error = createError(nextToken, errorMsg);
-            throw error;
+            throw createError(nextToken, errorMsg);
         }
     }
 

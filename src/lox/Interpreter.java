@@ -1,8 +1,12 @@
 package lox;
 
+import lox.decl.Declaration;
+import lox.decl.StatementDecl;
+import lox.decl.VariableDecl;
 import lox.expr.*;
 import lox.stmt.*;
 import lox.tokens.Token;
+import lox.visitors.DeclarationVisitor;
 import lox.visitors.ExpressionVisitor;
 import lox.visitors.StatementVisitor;
 
@@ -15,7 +19,7 @@ import static lox.tokens.TokenType.*;
  * value, recursively interpreting any subexpressions and combining them
  * according to the operator in the parent expression.
  */
-public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void> {
+public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void>, DeclarationVisitor<Void> {
 
     private Environment environment;
 
@@ -23,18 +27,40 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         environment = new Environment();
     }
 
-    public void interpret(List<Statement> statements) {
+    public void interpret(List<Declaration> declarations) {
         try {
-            for(Statement stmt : statements) {
-                execute(stmt);
+            for(Declaration decl : declarations) {
+                execute(decl);
             }
         } catch(RuntimeError error) {
             Lox.runtimeError(error);
         }
     }
 
+    private void execute(Declaration decl) {
+        decl.accept(this);
+    }
+
     private void execute(Statement stmt) {
         stmt.accept(this);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Declaration visitors
+    @Override
+    public Void visitVariableDecl(VariableDecl decl) {
+        Object value = null;
+        if(decl.value != null) {
+            value = evaluate(decl.value);
+        }
+
+        environment.declare(decl.identifier.getLexeme(), value);
+        return null;
+    }
+
+    @Override
+    public Void visitStatementDecl(StatementDecl decl) {
+        return decl.stmt.accept(this);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,17 +90,6 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
             execute(stmt.body);
         }
 
-        return null;
-    }
-
-    @Override
-    public Void visitVariableDeclarationStmt(VariableDeclarationStmt stmt) {
-        Object value = null;
-        if(stmt.value != null) {
-            value = evaluate(stmt.value);
-        }
-
-        environment.declare(stmt.identifier.getLexeme(), value);
         return null;
     }
 
@@ -235,8 +250,8 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         this.environment = new Environment(oldEnv);
 
         try {
-            for(Statement stmt : block.stmts) {
-                execute(stmt);
+            for(Declaration decl : block.decls) {
+                execute(decl);
             }
         } finally {
             this.environment = oldEnv;
