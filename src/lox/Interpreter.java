@@ -8,8 +8,7 @@ import lox.visitors.StatementVisitor;
 
 import java.util.List;
 
-import static lox.tokens.TokenType.AND;
-import static lox.tokens.TokenType.OR;
+import static lox.tokens.TokenType.*;
 
 /**
  * The Interpreter class is used to visit an Expression and compute its resulting
@@ -98,7 +97,31 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     @Override
     public Object visitAssignmentExpr(AssignmentExpression assignExpr) {
-        var value = evaluate(assignExpr.value);
+        // This can be a direct assignment (=) or syntactic sugar for operation and assignment
+        // i.e., += -= *= /=
+        // In the latter case, we construct a binary expression with the corresponding
+        // operator and evaluate it to get the result that will be assigned.
+
+        var operatorType = assignExpr.operator.getType();
+        Object value;
+
+        if(operatorType == EQUAL) {
+            value = evaluate(assignExpr.rightSide);
+        } else {
+            var binaryOpType = switch(operatorType) {
+                case PLUS_EQUAL ->  PLUS;
+                case MINUS_EQUAL -> MINUS;
+                case ASTERISK_EQUAL -> ASTERISK;
+                case SLASH_EQUAL -> SLASH;
+                default -> throw new IllegalStateException("Unsupported assignment operator");
+            };
+
+            var leftSide = new VariableExpression(assignExpr.target);
+            var binaryOp = new Token(binaryOpType);
+            var expr = new BinaryExpression(leftSide, binaryOp, assignExpr.rightSide);
+            value = evaluate(expr);
+        }
+
         environment.assign(assignExpr.target, value);
         return value;
     }
@@ -228,7 +251,8 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
      */
     private void ensureValueIsNumber(Object value, Token operator) {
         if(!(value instanceof Double)) {
-            throw new RuntimeError("Value is not a number: " + value.toString(), operator);
+            var name = value == null ? "null" : value.toString();
+            throw new RuntimeError("Value is not a number: " + name, operator);
         }
     }
 

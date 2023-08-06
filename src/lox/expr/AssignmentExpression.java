@@ -5,11 +5,13 @@ import lox.visitors.ExpressionVisitor;
 
 public class AssignmentExpression extends Expression {
     public final Token target;
-    public final Expression value;
+    public final Token operator;
+    public final Expression rightSide;
 
-    public AssignmentExpression(Token target, Expression value) {
+    public AssignmentExpression(Token target, Token operator, Expression rightSide) {
         this.target = target;
-        this.value = value;
+        this.operator = operator;
+        this.rightSide = rightSide;
     }
 
 

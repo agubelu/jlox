@@ -120,15 +120,17 @@ public class ASTParser {
     private Expression parseAssignment() {
         var leftSide = parseOr();
 
-        if(match(EQUAL)) {
+        if(match(EQUAL, PLUS_EQUAL, MINUS_EQUAL, ASTERISK_EQUAL, SLASH_EQUAL)) {
             // We can only generate an Assignment expression if whatever is on the
             // left side is an expression that we can assign to. Also, we consume
             // the entire right side before checking, to avoid leaving the parser
             // in an invalid state if the following check fails.
+            var operator = previousToken();
             var value = parseAssignment();
+
             if(leftSide instanceof VariableExpression) {
                 var target = ((VariableExpression) leftSide).identifier;
-                return new AssignmentExpression(target, value);
+                return new AssignmentExpression(target, operator, value);
             } else {
                 Lox.error(previousToken(), "Invalid target for assignment");
             }
