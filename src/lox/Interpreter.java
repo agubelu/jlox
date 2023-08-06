@@ -21,6 +21,8 @@ import static lox.tokens.TokenType.*;
  */
 public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void>, DeclarationVisitor<Void> {
 
+    private static class StopIteration extends RuntimeException { }
+
     private Environment environment;
 
     public Interpreter() {
@@ -73,6 +75,11 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
+    public Void visitBreakStmt(BreakStmt stmt) {
+        throw new StopIteration();
+    }
+
+    @Override
     public Void visitIfStmt(IfStmt ifStmt) {
         var condition = evaluate(ifStmt.condition);
         if(isTruthy(condition)) {
@@ -87,7 +94,11 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     @Override
     public Void visitWhileStmt(WhileStmt stmt) {
         while(isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body);
+            try {
+                execute(stmt.body);
+            } catch(StopIteration stop) {
+                break;
+            }
         }
 
         return null;

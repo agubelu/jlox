@@ -72,6 +72,8 @@ public class ASTParser {
     private Statement parseStatement() {
         if(match(PRINT)) {
             return parsePrintStatement();
+        } else if(match(BREAK)) {
+            return parseBreakStatement();
         } else if(match(LEFT_BRACE)) {
             return new Block(parseBlock());
         } else if(match(IF)) {
@@ -89,6 +91,11 @@ public class ASTParser {
         var expr = parseExpression();
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after expression to print");
         return new PrintStmt(expr);
+    }
+
+    private Statement parseBreakStatement() {
+        consumeExpectedOrError(SEMICOLON, "Expected semicolon after 'break'");
+        return new BreakStmt();
     }
 
     private Statement parseIfStatement() {

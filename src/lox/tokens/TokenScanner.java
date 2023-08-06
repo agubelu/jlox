@@ -244,5 +244,6 @@ public class TokenScanner {
         keywords.put("return", RETURN);
         keywords.put("this", THIS);
         keywords.put("super", SUPER);
+        keywords.put("break", BREAK);
     }
 }
