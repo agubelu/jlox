@@ -1,6 +1,8 @@
 package lox;
 
 import lox.builtins.PrintFunc;
+import lox.builtins.RandomFunc;
+import lox.builtins.StrFunc;
 import lox.builtins.TimeFunc;
 import lox.callables.LoxCallable;
 import lox.callables.LoxFunction;
@@ -8,6 +10,7 @@ import lox.decl.Declaration;
 import lox.decl.FunctionDecl;
 import lox.decl.StatementDecl;
 import lox.decl.VariableDecl;
+import lox.exceptions.BreakExc;
 import lox.exceptions.ReturnExc;
 import lox.expr.*;
 import lox.stmt.*;
@@ -28,14 +31,14 @@ import static lox.tokens.TokenType.*;
  */
 public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void>, DeclarationVisitor<Void> {
 
-    private static class StopIteration extends RuntimeException { }
-
     final Environment globals = new Environment();
     private Environment environment = globals;
 
     public Interpreter() {
         globals.declare("print", new PrintFunc());
         globals.declare("time", new TimeFunc());
+        globals.declare("str", new StrFunc());
+        globals.declare("random", new RandomFunc());
     }
 
     public void interpret(List<Declaration> declarations) {
@@ -94,7 +97,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     @Override
     public Void visitBreakStmt(BreakStmt stmt) {
-        throw new StopIteration();
+        throw new BreakExc();
     }
 
     @Override
@@ -124,7 +127,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         while(isTruthy(evaluate(stmt.condition))) {
             try {
                 execute(stmt.body);
-            } catch(StopIteration stop) {
+            } catch(BreakExc stop) {
                 break;
             }
         }
@@ -152,7 +155,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
-    public Object visitAssignmentExpr(AssignmentExpression assignExpr) {
+    public Object visitAssignmentExpr(AssignmentExpr assignExpr) {
         // This can be a direct assignment (=) or syntactic sugar for operation and assignment
         // i.e., += -= *= /=
         // In the latter case, we construct a binary expression with the corresponding
@@ -172,9 +175,9 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
                 default -> throw new IllegalStateException("Unsupported assignment operator");
             };
 
-            var leftSide = new VariableExpression(assignExpr.target);
+            var leftSide = new VariableExpr(assignExpr.target);
             var binaryOp = new Token(binaryOpType);
-            var expr = new BinaryExpression(leftSide, binaryOp, assignExpr.rightSide);
+            var expr = new BinaryExpr(leftSide, binaryOp, assignExpr.rightSide);
             value = evaluate(expr);
         }
 
@@ -183,22 +186,22 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
-    public Object visitLiteralExpr(LiteralExpression literalExpr) {
+    public Object visitLiteralExpr(LiteralExpr literalExpr) {
         return literalExpr.literal;
     }
 
     @Override
-    public Object visitGrouping(Grouping grouping) {
-        return evaluate(grouping.expr);
+    public Object visitGrouping(GroupExpr groupExpr) {
+        return evaluate(groupExpr.expr);
     }
 
     @Override
-    public Object visitVariableExpr(VariableExpression varExpr) {
+    public Object visitVariableExpr(VariableExpr varExpr) {
         return environment.get(varExpr.identifier);
     }
 
     @Override
-    public Object visitUnaryExpr(UnaryExpression unaryExpr) {
+    public Object visitUnaryExpr(UnaryExpr unaryExpr) {
         var rightResult = evaluate(unaryExpr.rightSide);
 
         return switch(unaryExpr.operator.getType()) {
@@ -214,7 +217,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
-    public Object visitBinaryExpr(BinaryExpression binaryExpr) {
+    public Object visitBinaryExpr(BinaryExpr binaryExpr) {
         var leftResult = evaluate(binaryExpr.leftSide);
         var rightResult = evaluate(binaryExpr.rightSide);
 
@@ -256,7 +259,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         };
     }
 
-    public Object visitLogicalExpr(LogicalExpression logicalExpr) {
+    public Object visitLogicalExpr(LogicalExpr logicalExpr) {
         var leftResult = evaluate(logicalExpr.leftSide);
         var leftIsTruthy = isTruthy(leftResult);
         var opType = logicalExpr.operator.getType();
@@ -273,7 +276,7 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         return evaluate(logicalExpr.rightSide);
     }
 
-    public Object visitCallExpr(CallExpression callExpr) {
+    public Object visitCallExpr(CallExpr callExpr) {
         var callee = evaluate(callExpr.callee);
 
         // Make sure that the callee evaluates in runtime to something that is indeed callable

@@ -111,8 +111,9 @@ public class ASTParser {
     }
 
     private Statement parseBreakStatement() {
+        var keyword = previousToken();
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after 'break'");
-        return new BreakStmt();
+        return new BreakStmt(keyword);
     }
 
     private Statement parseReturnStatement() {
@@ -190,7 +191,7 @@ public class ASTParser {
         // Then, construct the while with the given condition. If there is no condition,
         // provide "true" for an infinite loop.
         if(condition == null) {
-            condition = new LiteralExpression(true);
+            condition = new LiteralExpr(true);
         }
         body = new WhileStmt(condition, body);
 
@@ -238,9 +239,9 @@ public class ASTParser {
             var operator = previousToken();
             var value = parseAssignment();
 
-            if(leftSide instanceof VariableExpression) {
-                var target = ((VariableExpression) leftSide).identifier;
-                return new AssignmentExpression(target, operator, value);
+            if(leftSide instanceof VariableExpr) {
+                var target = ((VariableExpr) leftSide).identifier;
+                return new AssignmentExpr(target, operator, value);
             } else {
                 Lox.error(previousToken(), "Invalid target for assignment");
             }
@@ -255,7 +256,7 @@ public class ASTParser {
         while(match(OR)) {
             var operator = previousToken();
             var rightSide = parseAnd();
-            expr = new LogicalExpression(expr, operator, rightSide);
+            expr = new LogicalExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -267,7 +268,7 @@ public class ASTParser {
         while(match(AND)) {
             var operator = previousToken();
             var rightSide = parseEquality();
-            expr = new LogicalExpression(expr, operator, rightSide);
+            expr = new LogicalExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -279,7 +280,7 @@ public class ASTParser {
         while(match(EQUAL_EQUAL, NOT_EQUAL)) {
             var operator = previousToken();
             var rightSide = parseComparison();
-            expr = new BinaryExpression(expr, operator, rightSide);
+            expr = new BinaryExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -291,7 +292,7 @@ public class ASTParser {
         while(match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             var operator = previousToken();
             var rightSide = parseTerm();
-            expr = new BinaryExpression(expr, operator, rightSide);
+            expr = new BinaryExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -303,7 +304,7 @@ public class ASTParser {
         while(match(MINUS, PLUS)) {
             var operator = previousToken();
             var rightSide = parseFactor();
-            expr = new BinaryExpression(expr, operator, rightSide);
+            expr = new BinaryExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -315,7 +316,7 @@ public class ASTParser {
         while(match(SLASH, ASTERISK, PERCENT)) {
             var operator = previousToken();
             var rightSide = parseUnary();
-            expr = new BinaryExpression(expr, operator, rightSide);
+            expr = new BinaryExpr(expr, operator, rightSide);
         }
 
         return expr;
@@ -325,7 +326,7 @@ public class ASTParser {
         if(match(NOT, MINUS)) {
             var operator = previousToken();
             var rightSide = parseUnary();
-            return new UnaryExpression(operator, rightSide);
+            return new UnaryExpr(operator, rightSide);
         } else {
             return parseCall();
         }
@@ -347,24 +348,24 @@ public class ASTParser {
     }
 
     private Expression parsePrimary() {
-        if(match(TRUE)) return new LiteralExpression(true);
-        if(match(FALSE)) return new LiteralExpression(false);
-        if(match(NULL)) return new LiteralExpression(null);
+        if(match(TRUE)) return new LiteralExpr(true);
+        if(match(FALSE)) return new LiteralExpr(false);
+        if(match(NULL)) return new LiteralExpr(null);
 
         if(match(STRING, NUMBER)) {
             var literal = previousToken().getLiteral();
-            return new LiteralExpression(literal);
+            return new LiteralExpr(literal);
         }
 
         if(match(LEFT_PAREN)) {
             var expr = parseExpression();
             consumeExpectedOrError(RIGHT_PAREN, "Missing closing parenthesis");
-            return new Grouping(expr);
+            return new GroupExpr(expr);
         }
 
         if(match(IDENTIFIER)) {
             var ident = previousToken();
-            return new VariableExpression(ident);
+            return new VariableExpr(ident);
         }
 
         // Unexpected token
@@ -414,7 +415,7 @@ public class ASTParser {
         }
 
         var closingParens = previousToken();
-        return new CallExpression(callee, args, closingParens);
+        return new CallExpr(callee, args, closingParens);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -12,10 +12,10 @@ import lox.visitors.ExpressionVisitor;
     operand is truthy. Giving them their own class warrants a separate method to
     evaluate them in the interpreter and keeps code a bit tidier.
  */
-public class LogicalExpression extends BinaryExpression {
+public class LogicalExpr extends BinaryExpr {
 
 
-    public LogicalExpression(Expression leftSide, Token operator, Expression rightSide) {
+    public LogicalExpr(Expression leftSide, Token operator, Expression rightSide) {
         super(leftSide, operator, rightSide);
     }
 

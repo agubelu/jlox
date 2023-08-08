@@ -3,11 +3,11 @@ package lox.expr;
 import lox.tokens.Token;
 import lox.visitors.ExpressionVisitor;
 
-public class VariableExpression extends Expression {
+public class VariableExpr extends Expression {
 
     public Token identifier;
 
-    public VariableExpression(Token identifier) {
+    public VariableExpr(Token identifier) {
         this.identifier = identifier;
     }
 

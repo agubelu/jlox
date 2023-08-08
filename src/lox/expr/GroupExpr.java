@@ -2,11 +2,11 @@ package lox.expr;
 
 import lox.visitors.ExpressionVisitor;
 
-public class Grouping extends Expression {
+public class GroupExpr extends Expression {
 
     public final Expression expr;
 
-    public Grouping(Expression expr) {
+    public GroupExpr(Expression expr) {
         this.expr = expr;
     }
 

@@ -3,12 +3,12 @@ package lox.visitors;
 import lox.expr.*;
 
 public interface ExpressionVisitor<T> {
-    T visitBinaryExpr(BinaryExpression binaryExpr);
-    T visitLiteralExpr(LiteralExpression literalExpr);
-    T visitLogicalExpr(LogicalExpression logicalExpr);
-    T visitUnaryExpr(UnaryExpression unaryExpr);
-    T visitGrouping(Grouping grouping);
-    T visitVariableExpr(VariableExpression varExpr);
-    T visitAssignmentExpr(AssignmentExpression assignExpr);
-    T visitCallExpr(CallExpression callExpr);
+    T visitBinaryExpr(BinaryExpr binaryExpr);
+    T visitLiteralExpr(LiteralExpr literalExpr);
+    T visitLogicalExpr(LogicalExpr logicalExpr);
+    T visitUnaryExpr(UnaryExpr unaryExpr);
+    T visitGrouping(GroupExpr groupExpr);
+    T visitVariableExpr(VariableExpr varExpr);
+    T visitAssignmentExpr(AssignmentExpr assignExpr);
+    T visitCallExpr(CallExpr callExpr);
 }
