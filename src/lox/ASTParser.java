@@ -41,6 +41,8 @@ public class ASTParser {
         try {
             if(match(LET)) {
                 return parseVariableDecl();
+            } else if(match(FN)) {
+                return parseFunctionDecl("function");
             }
 
             return parseStatementDecl();
@@ -61,6 +63,27 @@ public class ASTParser {
         return new VariableDecl(identifier, value);
     }
 
+    private Declaration parseFunctionDecl(String kind) {
+        // FN has already been consumed
+        var identifier = consumeExpectedOrError(IDENTIFIER, "Expected " + kind + " name");
+        consumeExpectedOrError(LEFT_PAREN, "Expected '(' after " + kind + " name");
+
+        List<Token> parameters = new ArrayList<>();
+        if(!match(RIGHT_PAREN)) {
+            do {
+                var param = consumeExpectedOrError(IDENTIFIER, "Expected parameter name");
+                parameters.add(param);
+            } while(match(COMMA));
+            consumeExpectedOrError(RIGHT_PAREN, "Expected ')' after parameter list");
+        }
+
+        // parseBlock expects the opening brace to be consumed
+        consumeExpectedOrError(LEFT_BRACE, "Expected '{' before " + kind + " body");
+        var body = new Block(parseBlock());
+
+        return new FunctionDecl(identifier, parameters, body);
+    }
+
     private Declaration parseStatementDecl() {
         var stmt = parseStatement();
         return new StatementDecl(stmt);
@@ -70,10 +93,10 @@ public class ASTParser {
     /// Next, statement parsers
 
     private Statement parseStatement() {
-        if(match(PRINT)) {
-            return parsePrintStatement();
-        } else if(match(BREAK)) {
+        if(match(BREAK)) {
             return parseBreakStatement();
+        } else if (match(RETURN)) {
+            return parseReturnStatement();
         } else if(match(LEFT_BRACE)) {
             return new Block(parseBlock());
         } else if(match(IF)) {
@@ -87,15 +110,20 @@ public class ASTParser {
         }
     }
 
-    private Statement parsePrintStatement() {
-        var expr = parseExpression();
-        consumeExpectedOrError(SEMICOLON, "Expected semicolon after expression to print");
-        return new PrintStmt(expr);
-    }
-
     private Statement parseBreakStatement() {
         consumeExpectedOrError(SEMICOLON, "Expected semicolon after 'break'");
         return new BreakStmt();
+    }
+
+    private Statement parseReturnStatement() {
+        var keyword = previousToken();
+        Expression value = null;
+        if(!match(SEMICOLON)) {
+            value = parseExpression();
+            consumeExpectedOrError(SEMICOLON, "Expected semicolon after return");
+        }
+
+        return new ReturnStmt(keyword, value);
     }
 
     private Statement parseIfStatement() {
@@ -299,8 +327,23 @@ public class ASTParser {
             var rightSide = parseUnary();
             return new UnaryExpression(operator, rightSide);
         } else {
-            return parsePrimary();
+            return parseCall();
         }
+    }
+
+    private Expression parseCall() {
+        var call = parsePrimary();
+
+        // Match series of subsequent calls after the identifier
+        while(true) {
+            if(match(LEFT_PAREN)) {
+                call = finalizeCall(call);
+            } else {
+                break;
+            }
+        }
+
+        return call;
     }
 
     private Expression parsePrimary() {
@@ -343,13 +386,35 @@ public class ASTParser {
                 case FOR:
                 case IF:
                 case WHILE:
-                case PRINT:
                 case RETURN:
                     break;
             }
 
             consumeNextToken();
         }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Aux general methods
+
+    // Parses the arguments of a call after the left parens has been consumed.
+    // Receives the callee expression and returns a Call to said expression.
+    private Expression finalizeCall(Expression callee) {
+        List<Expression> args = new ArrayList<>();
+
+        // Parse arguments only if there are any, i.e., the next token is not ')'
+        if(!match(RIGHT_PAREN)) {
+            do {
+                var argument = parseExpression();
+                args.add(argument);
+            } while(match(COMMA));  // The condition check consumes the comma
+
+            // Consume the closing parens, since it wasn't matched by the previous if
+            consumeExpectedOrError(RIGHT_PAREN, "Expected closing parenthesis after function arguments");
+        }
+
+        var closingParens = previousToken();
+        return new CallExpression(callee, args, closingParens);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

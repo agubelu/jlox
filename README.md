@@ -10,4 +10,5 @@ My implementation has a few minor syntax changes to make myself happy:
 And some practical additions, such as:
 - `+=`, `-=`, `*=`, and `/=` for operation and assignment
 - `%` for modulo
-- `break` support in for and while loops
+- `break` support inside `for` and `while` loops
+- `print` as a built-in function instead of a statement

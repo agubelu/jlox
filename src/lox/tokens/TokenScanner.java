@@ -240,7 +240,6 @@ public class TokenScanner {
         keywords.put("let", LET);
         keywords.put("true", TRUE);
         keywords.put("false", FALSE);
-        keywords.put("print", PRINT);
         keywords.put("return", RETURN);
         keywords.put("this", THIS);
         keywords.put("super", SUPER);

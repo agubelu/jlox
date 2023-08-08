@@ -1,8 +1,14 @@
 package lox;
 
+import lox.builtins.PrintFunc;
+import lox.builtins.TimeFunc;
+import lox.callables.LoxCallable;
+import lox.callables.LoxFunction;
 import lox.decl.Declaration;
+import lox.decl.FunctionDecl;
 import lox.decl.StatementDecl;
 import lox.decl.VariableDecl;
+import lox.exceptions.ReturnExc;
 import lox.expr.*;
 import lox.stmt.*;
 import lox.tokens.Token;
@@ -10,6 +16,7 @@ import lox.visitors.DeclarationVisitor;
 import lox.visitors.ExpressionVisitor;
 import lox.visitors.StatementVisitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static lox.tokens.TokenType.*;
@@ -23,10 +30,12 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     private static class StopIteration extends RuntimeException { }
 
-    private Environment environment;
+    final Environment globals = new Environment();
+    private Environment environment = globals;
 
     public Interpreter() {
-        environment = new Environment();
+        globals.declare("print", new PrintFunc());
+        globals.declare("time", new TimeFunc());
     }
 
     public void interpret(List<Declaration> declarations) {
@@ -61,6 +70,14 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
     }
 
     @Override
+    public Void visitFunctionDecl(FunctionDecl decl) {
+        var currentEnv = this.environment;
+        var fnCallable = new LoxFunction(decl, currentEnv);
+        this.environment.declare(decl.identifier.getLexeme(), fnCallable);
+        return null;
+    }
+
+    @Override
     public Void visitStatementDecl(StatementDecl decl) {
         return decl.stmt.accept(this);
     }
@@ -70,13 +87,24 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     @Override
     public Void visitBlock(Block block) {
-        runBlock(block);
+        var environ = new Environment(this.environment);
+        runBlock(block, environ);
         return null;
     }
 
     @Override
     public Void visitBreakStmt(BreakStmt stmt) {
         throw new StopIteration();
+    }
+
+    @Override
+    public Void visitReturnStmt(ReturnStmt stmt) {
+        Object value = null;
+        if(stmt.value != null) {
+            value = evaluate(stmt.value);
+        }
+
+        throw new ReturnExc(value);
     }
 
     @Override
@@ -101,13 +129,6 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
             }
         }
 
-        return null;
-    }
-
-    @Override
-    public Void visitPrintStmt(PrintStmt stmt) {
-        var value = evaluate(stmt.expr);
-        System.out.println(value);
         return null;
     }
 
@@ -252,23 +273,47 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         return evaluate(logicalExpr.rightSide);
     }
 
+    public Object visitCallExpr(CallExpression callExpr) {
+        var callee = evaluate(callExpr.callee);
+
+        // Make sure that the callee evaluates in runtime to something that is indeed callable
+        if(!(callee instanceof LoxCallable callable)) {
+            throw new RuntimeError("The object is not callable", callExpr.closingParens);
+        }
+
+        // Make sure that the argument count matches the arity of the callable
+        var arity = callable.getArity();
+        var nArgs = callExpr.args.size();
+        if(arity != nArgs) {
+            throw new RuntimeError("Expected " + arity + " arguments, got " + nArgs + ".", callExpr.closingParens);
+        }
+
+        // Runtime checks passed, evaluate the arguments in order and store their results
+        List<Object> argValues = new ArrayList<>();
+        for(Expression argExpr : callExpr.args) {
+            argValues.add(evaluate(argExpr));
+        }
+
+        return callable.call(this, argValues);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Auxiliary private methods
 
     /**
-     * Runs a block containing statements, taking care of replacing
-     * and updating the environment as needed
+     * Runs a block containing statements using the provided environment, which
+     * must be adequately updated by the caller beforehand.
      */
-    private void runBlock(Block block) {
-        var oldEnv = this.environment;
-        this.environment = new Environment(oldEnv);
+    public void runBlock(Block block, Environment newEnviron) {
+        var oldEnviron = this.environment;
+        this.environment = newEnviron;
 
         try {
             for(Declaration decl : block.decls) {
                 execute(decl);
             }
         } finally {
-            this.environment = oldEnv;
+            this.environment = oldEnviron;
         }
     }
 

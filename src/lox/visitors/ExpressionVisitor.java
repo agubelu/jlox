@@ -10,4 +10,5 @@ public interface ExpressionVisitor<T> {
     T visitGrouping(Grouping grouping);
     T visitVariableExpr(VariableExpression varExpr);
     T visitAssignmentExpr(AssignmentExpression assignExpr);
+    T visitCallExpr(CallExpression callExpr);
 }
