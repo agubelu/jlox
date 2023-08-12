@@ -69,6 +69,10 @@ public class Lox {
         var statements = parser.parseTokens();
         if(hadSyntaxError) return;
 
+        var analyzer = new Analyzer(interpreter);
+        analyzer.resolve(statements);
+        if(hadSyntaxError) return;
+
         interpreter.interpret(statements);
     }
 

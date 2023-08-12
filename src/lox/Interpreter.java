@@ -20,7 +20,9 @@ import lox.visitors.ExpressionVisitor;
 import lox.visitors.StatementVisitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static lox.tokens.TokenType.*;
 
@@ -32,6 +34,7 @@ import static lox.tokens.TokenType.*;
 public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<Void>, DeclarationVisitor<Void> {
 
     final Environment globals = new Environment();
+    final Map<Expression, Integer> locals = new HashMap<>();
     private Environment environment = globals;
 
     public Interpreter() {
@@ -49,6 +52,10 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
         } catch(RuntimeError error) {
             Lox.runtimeError(error);
         }
+    }
+
+    public void addLocalResolution(Expression expr, int depth) {
+        this.locals.put(expr, depth);
     }
 
     private void execute(Declaration decl) {
@@ -181,7 +188,13 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
             value = evaluate(expr);
         }
 
-        environment.assign(assignExpr.target, value);
+        var depth = this.locals.get(assignExpr);
+        if(depth != null) {
+            environment.assignAt(assignExpr.target, value, depth);
+        } else {
+            globals.assign(assignExpr.target, value);
+        }
+
         return value;
     }
 
@@ -197,7 +210,12 @@ public class Interpreter implements ExpressionVisitor<Object>, StatementVisitor<
 
     @Override
     public Object visitVariableExpr(VariableExpr varExpr) {
-        return environment.get(varExpr.identifier);
+        var depth = this.locals.get(varExpr);
+        if(depth != null) {
+            return environment.getAt(varExpr.identifier, depth);
+        } else {
+            return globals.get(varExpr.identifier);
+        }
     }
 
     @Override

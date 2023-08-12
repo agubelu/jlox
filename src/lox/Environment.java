@@ -23,7 +23,7 @@ public class Environment {
     /**
      * Declares a new variable, with a (maybe null) initial value.
      * It is allowed to re-declare an existing variable, in that case,
-     * it is simply overwritten.
+     * it simply shadows the same name in outer environments.
      */
     public void declare(String name, Object value) {
         variables.put(name, value);
@@ -51,6 +51,10 @@ public class Environment {
         }
     }
 
+    public void assignAt(Token varToken, Object value, int depth) {
+        ancestor(depth).assign(varToken, value);
+    }
+
     /**
      * Retrieves the value of a given variable token, trying outer environments recursively.
      * If the variable does not exist, this will throw a RuntimeError.
@@ -68,5 +72,18 @@ public class Environment {
             // No luck and no more enclosing environments, throw an error
             throw new RuntimeError("Undefined variable '" + name + "'", varToken);
         }
+    }
+
+    public Object getAt(Token varToken, int depth) {
+        return ancestor(depth).get(varToken);
+    }
+
+    /** Traverses up the environment chain to get the n-th ancestor */
+    private Environment ancestor(int depth) {
+        var result = this;
+        for(int i = 0; i < depth; i++) {
+            result = result.outer;
+        }
+        return result;
     }
 }
